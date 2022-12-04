@@ -1,0 +1,772 @@
+<html>
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  h1 {
+    background-color: azure;
+    width: 100%;
+    margin: 0px;
+    padding: 5px;
+    border: 1px solid black;
+    justify-content: center;
+  }
+
+  .states {
+    fill: #ccc;
+    stroke: #fff;
+  }
+
+  .symbol {
+    fill-opacity: .8;
+    stroke: #fff;
+  }
+  
+  .mapPlot {
+    width: 480px;
+    height: 250px;
+  }
+
+  .scatterPlot {
+    overflow: scroll;
+  }
+
+  .line {
+    order: 1;
+    box-sizing: border-box;
+    width: 40%;
+  }
+
+  #chart {
+    box-sizing: border-box;
+    width: 40%;
+  }
+
+  body {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    width: 750px;
+  }
+
+  body > div {
+    display: flex;
+    float: left;
+    flex-wrap: wrap;
+    /* overflow: scroll; */
+    /* align-items: center; */
+    /* justify-content: center; */
+
+  }
+
+  #slider-container {
+    /* width: 100%; */
+    height: 1.2rem;
+    user-select: none;
+  }
+
+  #slider-container p {
+    padding-bottom: 10px;
+  }
+
+  #slider-bar {
+      width: inherit;
+      display: flex;
+      height: inherit;
+      justify-content: flex-start;
+      align-content: flex-start;
+      align-items: center;
+      border: none;
+      padding: 2px 8px;
+      position: relative;
+  }
+  #slider-bar output {
+      position: absolute;
+      top: -25px;
+      padding: 6px;
+      height: 1rem;
+      min-width: 1rem;
+      text-align: center;
+      border-radius: 5px;
+  }
+  .slider-handles {
+      width: 50%;
+      border: none;
+      box-sizing: border-box;
+      margin: 0;
+      /* display: grid; */
+  }
+  .slider-handles:hover {
+      cursor: pointer;
+  }
+  #slider-handle-1 {
+      /* height: inherit; */
+      /* grid-column-start: 1; */
+      /* grid-row-start: 1; */
+  }
+  #slider-output-1 {
+      left: 5%;
+  }
+  #slider-handle-2 {
+      transform: scaleX(-1);
+      /* grid-column-start: 1; */
+      /* grid-row-start: 1; */
+  }
+  #slider-output-2 {
+      right: 5%;
+  }
+  .slider-handles {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+  }
+
+  #slider-bar.theme-light {
+      background-color: beige;
+      box-shadow: 0px 0px 5px 0px #e4e3e2;
+  }
+  .theme-light output {
+      background: beige;
+      color: #000;
+  }
+  /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+  .theme-light .slider-handles::-webkit-slider-runnable-track {
+      background: #013D63;
+      height: 0.2rem;
+  }
+  /* Firefox */
+  .theme-light .slider-handles::-moz-range-track {
+      background: #013D63;
+  }
+  /* The slider thumb (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+  .theme-light .slider-handles::-webkit-slider-thumb {
+      -webkit-appearance: none; /* Override default look */
+      appearance: none;  
+      background: #1E63B8;
+      height: 1.2rem;
+      width: 1.2rem;
+      border-radius: 50%;
+      margin-top: -8px;
+  }
+  /* Firefox thumb */
+  .theme-light .slider-handles::-moz-range-thumb {
+      background: #1E63B8;
+      height: 1.2rem;
+      width: 1.2rem;
+      border-radius: 50%;
+      margin-top: -8px;
+      border: none;
+
+  }
+
+  .filters {
+    background-color: beige;
+    width: 20%;
+    padding: 5px;
+    box-sizing: border-box;
+  }
+
+  .info {
+    border: 1px solid black;
+    width: 100%;
+    background-color: azure;
+  }
+
+  .info h4 {
+    width: 1080px;
+    padding-left: 5px;
+    padding-top: 5px;
+    margin: 0px;
+  }
+
+  .info ul {
+    margin: 0px;
+  }
+
+</style>
+
+<body>
+  <h1>Drug Overdose in the State of Connecticut</h1>
+  <div class="visual">
+    <div class="filters">
+      <p>Overdose Report Filters:</p>
+      <div>
+        Sex: <select id="sex" class="dropdown"></select><br>
+      </div>
+      <div>
+        Race: <select id="race" class="dropdown"></select><br>
+      </div>
+      <div>
+        Overdose Result: <select id="death" class="dropdown"></select><br>
+      </div>
+      <div id="slider-container">
+        <p>Age Range: </p>
+        <div id="slider-bar" class="theme-light" data-max="40" data-min="15" data-precision="0">
+          <input type="range" id="slider-handle-1" class="slider-handles" min="0" max="100" value="0"/>
+          <output for="slider-handle-1" id="slider-output-1"></output>
+          <input type="range" id="slider-handle-2" class="slider-handles" min="0" max="100" value="0"/>
+          <output for="slider-handle-2" id="slider-output-2"></output>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="info">
+    <h4>Notable History Related to Drug Use and Consumption:</h4>
+    <ul>
+      <li>In 2017, the US department of health and human services declared a public health emergency with respect to the opioid crisis.</li>
+      <li>From 1990s and thereafter, pharmaceutical companies re-assured medical community opioid addiction would not be an issue.</li>
+      <li>No drug policy revisions in Connecticut since the 1990s.</li>
+    </ul>
+  </div>
+</body>
+  
+
+  <!-- d3 v7 integration -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <!-- d3 topojson -->
+  <script src="http://d3js.org/topojson.v1.min.js"></script>
+
+  <script>
+    //
+    //
+    //
+    //
+    // Sorting of Bar Chart
+    let sexOptions = ["All", "Male", "Female"];
+    let raceOptions = ["All", "White", "Black", "Asian Indian", "Asian, Other"];
+    let deathOptions = ["All", "Lethal", "Non-Lethal"];
+    let sortingVar = "frequency";
+    let selectedOptions = {"Sex":"All", "Race": "All", "Date Type":"All"}
+
+    // add the options to the button
+    d3.selectAll("#sex")
+      .selectAll('myOptions')
+     	.data(sexOptions)
+      .enter()
+    	.append('option')
+      .text(function (d) { return d; }) // text showed in the menu
+      .attr("value", function (d) { return d; }) // corresponding value returned by the button
+    
+    // add the options to the button
+    d3.selectAll("#race")
+      .selectAll('myOptions')
+     	.data(raceOptions)
+      .enter()
+    	.append('option')
+      .text(function (d) { return d; }) // text showed in the menu
+      .attr("value", function (d) { return d; }) // corresponding value returned by the button
+    
+    // add the options to the button
+    d3.selectAll("#death")
+      .selectAll('myOptions')
+     	.data(deathOptions)
+      .enter()
+    	.append('option')
+      .text(function (d) { return d; }) // text showed in the menu
+      .attr("value", function (d) { return d; }) // corresponding value returned by the button
+
+
+    // When the button is changed, run the updateChart function
+    d3.select("#sex").on("change", function(event,d) {
+        // recover the option that has been chosen
+        const selectedOption = d3.select(this).property("value")
+        // run the updateChart function with this selected option
+        selectedOptions["Sex"] = selectedOption;
+        drawBarChart();
+    })
+
+    // When the button is changed, run the updateChart function
+    d3.select("#race").on("change", function(event,d) {
+        // recover the option that has been chosen
+        const selectedOption = d3.select(this).property("value")
+        // run the updateChart function with this selected option
+        selectedOptions["Race"] = selectedOption;
+        drawBarChart();
+    })
+
+    // When the button is changed, run the updateChart function
+    d3.select("#death").on("change", function(event,d) {
+        // recover the option that has been chosen
+        const selectedOption = d3.select(this).property("value")
+        // run the updateChart function with this selected option
+        if (selectedOption == "Lethal")
+        {
+          selectedOptions["Date Type"] = "Date of death";
+        }
+        else if (selectedOption == "Non-Lethal")
+        {
+          selectedOptions["Date Type"] = "Date reported";
+        }
+        else
+        {
+          selectedOptions["Date Type"] = "All";
+        }
+        drawBarChart();
+    })
+
+    function update_sorting() {
+      dataset_array = [];
+      var keys = Object.keys(dataset_map);
+        keys.forEach(d=>{dataset_array.push(d);});
+        if (sortingVar == "alphabetical") 
+        {
+          dataset_array = dataset_array.sort((a, b) => {
+          // console.log(a);
+          let fa = a;
+          let fb = b;
+          if (fa < fb)
+          {
+            return -1;
+          }
+          if (fa > fb)
+          {
+            return 1;
+          }
+          return 0;});
+        }
+        else if (sortingVar == "frequency")
+        {
+          dataset_array = dataset_array.sort((a, b) => {
+            return dataset_map[b] - dataset_map[a];});
+        }
+        else
+        {
+          dataset_array = dataset_array.sort((a, b) => {
+            return b.properties.unemployment - a.properties.unemployment;});
+        }
+      dataset = dataset_array
+    }
+    
+    //
+    //
+    //
+    //
+    // Slider
+    let smin = 15, smax = 40;
+
+    // init slider
+    const initSlider = () => {
+      const bar = document.getElementById('slider-bar')
+      const maxBar = bar.dataset.max ? Number(bar.dataset.max) : 100
+      const minBar = bar.dataset.min ? Number(bar.dataset.min) : 0
+      const out1 = document.getElementById('slider-output-1')
+      const out2 = document.getElementById('slider-output-2')
+      if (out1 && out2) 
+      {
+          out1.textContent = minBar
+          out2.textContent = maxBar
+      }
+    }
+
+    const registerSliderHandleListeners = () => {
+      const handleOne = document.getElementById('slider-handle-1')
+      const handleTwo = document.getElementById('slider-handle-2')
+      const bar = document.getElementById('slider-bar')
+      handleOne.addEventListener('mouseup', onChangeSliderHandler)
+      handleTwo.addEventListener('mouseup', onChangeSliderHandler)
+      // listen to events on slider change
+      bar.addEventListener('range-change', (evt) => {
+          // print values
+          // console.log(evt.detail.values)
+      })
+    }
+
+    const onChangeSliderHandler = (evt) => {
+      const el = evt.target
+      const id = el.id
+      let elWidth = el.style.width ? Number(el.style.width.replace('%', "")) : 50
+      const hand2 = id === 'slider-handle-1' ? document.getElementById('slider-handle-2') : document.getElementById('slider-handle-1')
+      let hand2Width = hand2.style.width ? Number(hand2.style.width.replace('%', "")) : 50
+      let elMax = Number(el.max)
+      let elVal = Number(el.value)
+      const hand2Val = Number(hand2.value)
+      const bar = document.getElementById('slider-bar')
+      const maxBar = bar.dataset.max ? Number(bar.dataset.max) : 100
+      const minBar = bar.dataset.min ? Number(bar.dataset.min) : 0
+      const fixer = Math.ceil(0.02 * Math.abs((maxBar - minBar)))
+      if ((elVal >= elMax && elMax >= 50) || elVal > 50 || elVal === elMax) {
+          el.max = elVal + fixer
+          if (el.max >= 100) {
+              el.style.width = '100%'
+              elWidth = 99.99
+              el.max = 100 - fixer
+          } else {
+              elWidth = el.max
+          }
+          el.style.width = `${elWidth}%`
+      }
+      hand2.max = 100 - el.max
+      hand2Width = 100 - elWidth
+      hand2.style.width = `${hand2Width}%`
+      if (hand2Val >= hand2.max) {
+          hand2.value = hand2.max - fixer
+      }
+      bar.dispatchEvent(onRangeSlide)
+    }
+
+    const onRangeSlide = new CustomEvent('range-change', {
+      detail: {
+          get values() {
+              const bar = document.getElementById('slider-bar')
+              if (!bar) {
+                  return undefined
+              }
+              // getting data values
+              const maxBar = bar.dataset.max ? Number(bar.dataset.max) : 100
+              const minBar = bar.dataset.min ? Number(bar.dataset.min) : 0
+              const precision = bar.dataset.precision ? Number(bar.dataset.precision) : 0
+              // sliders
+              const slider1 = document.querySelector('#slider-handle-1')
+              const slider2 = document.querySelector('#slider-handle-2')
+              // getting slider values
+              const slider1Max = Number(slider1.max)
+              const slider2Max = Number(slider2.max)
+              const slider1Val = Number(slider1.value)
+              const slider2Val = Number(slider2.value)
+              const totalSliders = slider1Max + slider2Max
+              const minValue = minBar + (slider1Val/totalSliders)*(maxBar - minBar)
+              const maxValue = minBar + ((slider1Max + (slider2Max - slider2Val)) / totalSliders) * (maxBar - minBar)
+              // update outputs
+              const out1 = document.getElementById('slider-output-1')
+              const out2 = document.getElementById('slider-output-2')
+              const minRange = precision ? minValue .toFixed(precision) : Math.ceil(minValue)
+              const maxRange = precision ? maxValue .toFixed(precision) : Math.floor(maxValue)
+              if (out1 && out2) {
+                  out1.textContent = minRange
+                  out2.textContent = maxRange
+              }
+              smin = minRange;
+              smax = maxRange;
+              drawBarChart();
+              return {minRange, maxRange}
+          }
+      }
+    })
+
+    initSlider();
+    registerSliderHandleListeners();
+
+    //
+    //
+    //
+    //
+    // Map
+    // When fixed, paste code here.
+
+    //
+    //
+    //
+    //
+    // Line Chart Plot
+
+    // set the dimensions and margins of the graph
+    var margin = {top: 40, right: 40, bottom: 120, left: 40},
+    width = 300 - margin.left - margin.right,
+    height = 350 - margin.top - margin.bottom;
+
+    // append the svg object to the body of the page
+    var svg = d3.select(".visual")
+    .append("svg")
+      .attr("class", "line")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+
+    // Now I can use this dataset:
+    function sortByDateAscending(a, b) {
+    // Dates will be cast to numbers automagically:
+    return a - b;
+    }
+
+    let line_keys;
+    function drawLineChart(data) {
+
+      // Add X axis --> it is a date format
+      // console.log(data);
+      line_keys = Object.keys(date_map);
+      line_keys = line_keys.sort(sortByDateAscending);
+      var x = d3.scaleTime()
+        .domain(d3.extent(line_keys, function(d) { return new Date(d); }))
+        .range([ 0, width ]);
+      svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-65)");
+
+      // Add Y axis
+      var y = d3.scaleLinear()
+        .domain([0, d3.max(line_keys, function(d) { return +date_map[d]; })])
+        .range([ height, 0 ]);
+      svg.append("g")
+        .call(d3.axisLeft(y));
+
+      
+      // Add the line
+      svg.append("path")
+        .datum(line_keys)
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 1.5)
+        .attr("d", d3.line()
+          .x(function(d) { 
+            // console.log(d);
+            // console.log(x(new Date(d)));
+            return x(new Date(d)) })
+          .y(function(d) { 
+            // console.log(date_map[d]);
+            // console.log(y(date_map[d]))
+            return y(date_map[d])})
+          )
+
+      var pathOfLine = d3.Gen(line_keys);
+  
+      d3.select('path')
+          .attr('d', pathOfLine);
+
+    }
+
+
+    //
+    //
+    //
+    //
+    // Bar Chart
+    
+    //chart dimensions
+    let w_bar = 300;
+    let h_bar = 350;
+    let margin_bar = {top: 40, right: 40, bottom: 120, left: 40};
+    let width_bar = w_bar - margin_bar.left - margin_bar.right;
+    let height_bar = h_bar - margin_bar.top - margin_bar.bottom;
+    let date_map = {};
+    let date_data = [];
+
+    //create blank chart
+    let svg_bar = d3.select(".visual")
+        .append("svg")
+        .attr("width", w_bar)
+        .attr("height", h_bar)
+        .attr("id", "chart")
+        .attr("class", "bar")
+        .append("g")
+        .attr("transform", "translate(" + margin_bar.left + "," + margin_bar.top + ")");
+
+    //create scales
+
+    let all_states = [  "Amphet",
+                        "Any Opioid",
+                        "Cocaine",
+                        "Benzodiazepine",
+                        "Ethanol",
+                        "Fentanyl",
+                        "Fentanyl Analogue",
+                        "Gabapentin",
+                        "Heroin",
+                        "Heroin DC",
+                        "Heroin/Morph/Codeine",
+                        "Hydrocodone",
+                        "Hydromorphone",
+                        "Meth/Amphetamine",
+                        "Methadone",
+                        "Morphine (Not Heroin)",
+                        "Opiate NOS",
+                        "Other Opioid",
+                        "Oxycodone",
+                        "Oxymorphone",
+                        "Tramad",
+                        "Xylazine"];
+            
+    let x_bar = d3.scaleBand()
+        .domain(all_states)
+        .range([0, width_bar])
+        .paddingInner(0.1);
+
+    let y_bar = d3.scaleLinear()
+        .domain([0, 2800])
+        .range([height_bar, 0]);
+
+    svg_bar.append("g")
+        .attr("class", "x_axis_bar")
+        .attr("transform", "translate(0," + height_bar + ")")
+        .call(d3.axisBottom(x_bar))
+        .selectAll("text")	
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-65)");
+
+    svg_bar.append("g")
+        .attr("class", "y_axis")
+        .call(d3.axisLeft(y_bar));
+
+    function recalculateDataset() {
+      dataset_map = {}
+      centroid.forEach(occurence => {
+        let age = occurence["Age"];
+        let filter_violation = false;
+        let date = new Date(d3.timeParse("%m/%d/%Y")(occurence.Date));
+
+        if (age == undefined)
+        {
+          return;
+        }
+        if (age > smax || age < smin) 
+        {
+          return;
+        }
+
+        let occurrence_filters = ["Sex", "Race", "Date Type"];
+        occurrence_filters.forEach(occurrence_filter => {
+            var all_selected = selectedOptions[occurrence_filter] == "All";
+            var matching_selector = selectedOptions[occurrence_filter] == occurence[occurrence_filter];
+            if (!all_selected && !matching_selector)
+            {
+              filter_violation = true;
+            }
+          })
+
+        if (filter_violation)
+        {
+          return;
+        }
+
+        if (date_map[date] != undefined)
+        {
+          date_map[date] += 1;
+          date_data.push({"Date":date, "value":date_map[date]})
+        }
+        else
+        {
+          date_map[date] = 1;
+          date_data.push({"Date":date, "value":1})
+        }
+
+        all_states.forEach(drug => {
+          if (occurence[drug] == 0)
+          {
+            return;
+          }
+          if (dataset_map[drug] != undefined)
+          {
+            dataset_map[drug] += 1;
+          }
+          else
+          {
+            dataset_map[drug] = 1;
+          }
+        })
+      });
+    }
+
+    function drawBarChart() {
+      // default transition settings
+      //var bar_data = dataset.filter(d=>{return d.properties.selected == "true";});
+      //var bar_data = bar_data.filter(d=>{return d != undefined;});
+      // console.log(selectedOptions);
+      recalculateDataset();
+
+      // console.log(dataset_map);
+      update_sorting();
+
+      x_bar.domain(dataset);
+      //dataset_map.filter(d=>{return d == 0;});
+      //let bar_data_names = bar_data.map(d=>{return d;})
+      // if (x_bar.domain().length == 0) {
+      //   x_bar.domain(dataset.map(d=>{return d.properties.name;}));
+      //   bar_data = dataset_map;
+      // }
+
+      d3.select(".x_axis_bar")
+        .call(d3.axisBottom(x_bar))
+        .selectAll("text")	
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-65)");
+
+      let t = d3.transition()
+        .duration(500);
+              
+      //console.log(bar_data);
+      svg_bar.selectAll("rect.bar")
+        .data(dataset, (d) => {
+            return d;
+        }).join(
+          //ENTER (elements to be created)
+          enter => {
+            enter
+            .append("rect")
+            .attr("class", "bar")
+            .attr("x", d => {
+              return x_bar(d)})
+            .attr("width", x_bar.bandwidth())
+            .attr("y", y_bar(0))
+            .attr("fill", "#4daf4a")
+            .transition(t)
+            .attr("y", d => {return y_bar(dataset_map[d])})
+            .attr("height", d => height_bar - y_bar(dataset_map[d]))
+          }
+            ,
+
+          //UPDATE (elements to be updated)
+          update => update
+            .attr("fill", "#4daf4a")
+            .transition(t)
+            .attr("x", d => x_bar(d))
+            .attr("width", x_bar.bandwidth())
+            .attr("y", d => y_bar(dataset_map[d]))
+            .attr("height", d => height_bar - y_bar(dataset_map[d]))
+            ,
+
+          //EXIT (elements to be removed)
+          exit => {
+            exit
+            .attr("fill", "#4daf4a")
+            .transition(t)
+            .attr("y", y_bar(0))
+            .attr("height", 0)
+            .remove();
+          })
+    }
+
+    async function ready() {
+      // load files async; store the values so we can use them later
+      states = await d3.json("connecticut_counties.json");
+      centroid = await d3.csv("DrugDeathsClean.csv");
+      console.log(centroid);
+      
+      //console.log(states);
+      //console.log(centroid);
+      // drawStates();
+      // drawCircles();
+      // drawScatterPlot();
+      //Read the data
+      let data = await d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/3_TwoNumOrdered_comma.csv",
+      // When reading the csv, I must format variables:
+      function(d){
+        return { date : d3.timeParse("%Y-%m-%d")(d.date), value : d.value }
+      });
+
+      drawBarChart();
+      console.log(data)
+      // let data2 = await d3.csv("DrugDeathsClean.csv",
+      // // When reading the csv, I must format variables:
+      // function(d){
+      //   return { date : d3.timeParse("%m/%d/%Y")(d.Date), value : date_map[d.Date] }
+      // });
+      drawLineChart();
+    }
+
+    // call the function that draws
+    ready();
+
+  </script>
+</body>
+
+</html>
