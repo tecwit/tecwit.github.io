@@ -498,6 +498,13 @@
       .attr("transform",
             "translate(" + margin.left + "," + margin.top + ")");
 
+    svg.append("text")
+   .attr("x", width/2)
+   .attr("y", 0)
+   .attr("text-anchor", "middle")
+   .style("font-size", "16px")
+   .text("Heroin (Opioid) Incidents Across Time");
+
     // Now I can use this dataset:
     function sortByDateAscending(a, b) {
     // Dates will be cast to numbers automagically:
@@ -507,6 +514,13 @@
     let line_keys;
     function drawLineChart() {
       d3.selectAll(".line g > *").remove();
+
+      svg.append("text")
+      .attr("x", width/2)
+      .attr("y", 0)
+      .attr("text-anchor", "middle")
+      .style("font-size", "16px")
+      .text("Heroin (Opioid) Incidents Across Time");
       // Add X axis --> it is a date format
       // console.log(data);
       line_keys = Object.keys(date_map);
@@ -550,7 +564,7 @@
     .attr("d", area)
     .attr("transform", "translate(0,300)")
     .transition()
-    .duration(1000)
+    .duration(100)
     .attr("transform", "translate(0,0)");
 
     const linePath = svg
@@ -596,6 +610,13 @@
         .attr("class", "bar")
         .append("g")
         .attr("transform", "translate(" + margin_bar.left + "," + margin_bar.top + ")");
+    
+    svg_bar.append("text")
+   .attr("x", width_bar/2)
+   .attr("y", 0)
+   .attr("text-anchor", "middle")
+   .style("font-size", "16px")
+   .text("Incidents Across Drug Types");
 
     //create scales
 
