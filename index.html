@@ -170,6 +170,7 @@
     border: 1px solid black;
     width: 100%;
     background-color: azure;
+    box-sizing: border-box;
   }
 
   .info h4 {
@@ -182,6 +183,25 @@
   .info ul {
     margin: 0px;
   }
+
+  path.line {
+  fill: none;
+  stroke: blue;
+  stroke-width: 3px;
+  }
+
+  path.area {
+  fill: blue;
+  opacity: 0.2;
+  }
+
+  .axis path,
+  .axis line {
+  fill: none;
+  stroke: slategray;
+  shape-rendering: crispEdges;
+  }
+
 
 </style>
 
@@ -224,7 +244,7 @@
   <!-- d3 v7 integration -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <!-- d3 topojson -->
-  <script src="https://d3js.org/topojson.v1.min.js"></script>
+  <script src="http://d3js.org/topojson.v1.min.js"></script>
 
   <script>
     //
@@ -273,6 +293,7 @@
         // run the updateChart function with this selected option
         selectedOptions["Sex"] = selectedOption;
         drawBarChart();
+        drawLineChart();
     })
 
     // When the button is changed, run the updateChart function
@@ -282,6 +303,7 @@
         // run the updateChart function with this selected option
         selectedOptions["Race"] = selectedOption;
         drawBarChart();
+        drawLineChart();
     })
 
     // When the button is changed, run the updateChart function
@@ -302,6 +324,7 @@
           selectedOptions["Date Type"] = "All";
         }
         drawBarChart();
+        drawLineChart();
     })
 
     function update_sorting() {
@@ -367,7 +390,7 @@
       // listen to events on slider change
       bar.addEventListener('range-change', (evt) => {
           // print values
-          // console.log(evt.detail.values)
+          console.log(evt.detail.values)
       })
     }
 
@@ -438,6 +461,7 @@
               smin = minRange;
               smax = maxRange;
               drawBarChart();
+              drawLineChart();
               return {minRange, maxRange}
           }
       }
@@ -477,12 +501,12 @@
     // Now I can use this dataset:
     function sortByDateAscending(a, b) {
     // Dates will be cast to numbers automagically:
-    return a - b;
+    return new Date(a) - new Date(b);
     }
 
     let line_keys;
-    function drawLineChart(data) {
-
+    function drawLineChart() {
+      d3.selectAll(".line g > *").remove();
       // Add X axis --> it is a date format
       // console.log(data);
       line_keys = Object.keys(date_map);
@@ -506,28 +530,45 @@
       svg.append("g")
         .call(d3.axisLeft(y));
 
-      
-      // Add the line
-      svg.append("path")
-        .datum(line_keys)
-        .attr("fill", "none")
-        .attr("stroke", "steelblue")
-        .attr("stroke-width", 1.5)
-        .attr("d", d3.line()
-          .x(function(d) { 
-            // console.log(d);
-            // console.log(x(new Date(d)));
-            return x(new Date(d)) })
-          .y(function(d) { 
-            // console.log(date_map[d]);
-            // console.log(y(date_map[d]))
-            return y(date_map[d])})
-          )
+    const area = d3
+    .area()
+    .x((d) => { return x(new Date(d)); })
+    .y0(height)
+    .y1((d) => { return y(date_map[d]); })
+    .curve(d3.curveCardinal);
 
-      var pathOfLine = d3.Gen(line_keys);
-  
-      d3.select('path')
-          .attr('d', pathOfLine);
+    const valueline = d3
+    .line()
+    .x((d) => { return x(new Date(d)); })
+    .y((d) => { return y(date_map[d]); })
+    .curve(d3.curveCardinal);
+
+    const areaPath = svg
+    .append("path")
+    .data([line_keys])
+    .attr("class", "area")
+    .attr("d", area)
+    .attr("transform", "translate(0,300)")
+    .transition()
+    .duration(1000)
+    .attr("transform", "translate(0,0)");
+
+    const linePath = svg
+    .append("path")
+    .data([line_keys])
+    .attr("class", "line")
+    .attr("d", valueline)
+
+    const pathLength = linePath.node().getTotalLength();
+
+    linePath
+    .attr("stroke-dasharray", pathLength)
+    .attr("stroke-dashoffset", pathLength)
+    .attr("stroke-width", 3)
+    .transition()
+    .duration(1000)
+    .attr("stroke-width", 0)
+    .attr("stroke-dashoffset", 0);
 
     }
 
@@ -545,7 +586,6 @@
     let width_bar = w_bar - margin_bar.left - margin_bar.right;
     let height_bar = h_bar - margin_bar.top - margin_bar.bottom;
     let date_map = {};
-    let date_data = [];
 
     //create blank chart
     let svg_bar = d3.select(".visual")
@@ -606,7 +646,8 @@
         .call(d3.axisLeft(y_bar));
 
     function recalculateDataset() {
-      dataset_map = {}
+      dataset_map = {};
+      date_map = {};
       centroid.forEach(occurence => {
         let age = occurence["Age"];
         let filter_violation = false;
@@ -623,28 +664,17 @@
 
         let occurrence_filters = ["Sex", "Race", "Date Type"];
         occurrence_filters.forEach(occurrence_filter => {
-            var all_selected = selectedOptions[occurrence_filter] == "All";
-            var matching_selector = selectedOptions[occurrence_filter] == occurence[occurrence_filter];
-            if (!all_selected && !matching_selector)
-            {
-              filter_violation = true;
-            }
-          })
+          var all_selected = selectedOptions[occurrence_filter] == "All";
+          var matching_selector = selectedOptions[occurrence_filter] == occurence[occurrence_filter];
+          if (!all_selected && !matching_selector)
+          {
+            filter_violation = true;
+          }
+        })
 
         if (filter_violation)
         {
           return;
-        }
-
-        if (date_map[date] != undefined)
-        {
-          date_map[date] += 1;
-          date_data.push({"Date":date, "value":date_map[date]})
-        }
-        else
-        {
-          date_map[date] = 1;
-          date_data.push({"Date":date, "value":1})
         }
 
         all_states.forEach(drug => {
@@ -660,6 +690,20 @@
           {
             dataset_map[drug] = 1;
           }
+
+          if (drug != "Heroin")
+          {
+            return;
+          }
+
+          if (date_map[date.getFullYear()] != undefined)
+          {
+            date_map[date.getFullYear()] += 1;
+          }
+          else
+          {
+            date_map[date.getFullYear()] = 1;
+          }
         })
       });
     }
@@ -674,6 +718,7 @@
       // console.log(dataset_map);
       update_sorting();
 
+      console.log("dataset: \n", dataset);
       x_bar.domain(dataset);
       //dataset_map.filter(d=>{return d == 0;});
       //let bar_data_names = bar_data.map(d=>{return d;})
@@ -739,22 +784,15 @@
       // load files async; store the values so we can use them later
       states = await d3.json("connecticut_counties.json");
       centroid = await d3.csv("DrugDeathsClean.csv");
-      console.log(centroid);
+      console.log("centroid: \n", centroid);
       
       //console.log(states);
       //console.log(centroid);
       // drawStates();
       // drawCircles();
       // drawScatterPlot();
-      //Read the data
-      let data = await d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/3_TwoNumOrdered_comma.csv",
-      // When reading the csv, I must format variables:
-      function(d){
-        return { date : d3.timeParse("%Y-%m-%d")(d.date), value : d.value }
-      });
 
       drawBarChart();
-      console.log(data)
       // let data2 = await d3.csv("DrugDeathsClean.csv",
       // // When reading the csv, I must format variables:
       // function(d){
